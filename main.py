@@ -27,8 +27,19 @@ for instruction in program:
                 for elt in target['elts']:
                     if(elt['ast_type'] == 'Name'):
                         var.append(elt['id'])
-            #elif(target['ast_type'] == 'Subscript'):
-
+            elif(target['ast_type'] == 'Subscript'):
+               if target['slice']['ast_type'] == 'Index':
+                   index = target['slice']['value']['n']['n']
+               if target['value']['ast_type'] == 'Name':
+                   var1 = []
+                   var1.append(target['value']['id'])
+                   var1.append(index)
+                   var.append(var1)
+                   # var = [[id,index]] 
+                
         value = instruction['value']
-        '''Tuple, Name, List'''
+        '''Num, Tuple, Name, List'''
+        #if value['ast_type'] == 'Num':
+            
+        
                 

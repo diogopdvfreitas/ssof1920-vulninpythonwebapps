@@ -18,8 +18,10 @@ def read_patterns(pattern_file):
         vuln_name = pattern['vulnerability']
         vuln_exists = False
         for vuln in vulns:
-            if(vuln_name == vuln.vulnerability):
+            if(vuln_name == vuln.get_vulnerability()):
                 vuln.add_sources(pattern['sources'])
+                vuln.add_sanitizers(pattern['sanitizers'])
+                vuln.add_sinks(pattern['sinks'])
                 vuln_exists = True
                 break
         if(not vuln_exists):    

@@ -3,14 +3,33 @@ def process_name(instruction):
 
 def process_str(instruction):
     string = "\"" + instruction['s'] + "\""
-    return string
+    #return string
+    return "\"untaint\""
+
+def process_boolean(instruction):
+    #return instruction['value']
+    return "\"untaint\""
+
+def process_float(instruction):
+    #return instruction['n']
+    return "\"untaint\""
 
 def process_int(instruction):
-    return instruction['n']
+    #return instruction['n']
+    return "\"untaint\""
+
+def process_complex(instruction):
+    return "\"untaint\""
+    #return instruction['i']
 
 def process_num(instruction):
-    if(instruction['ast_type'] == 'int'):
-        return process_int(instruction)
+    sub_ins = instruction['n']
+    if(sub_ins['ast_type'] == 'int'):
+        return process_int(sub_ins)
+    elif(sub_ins['ast_type'] == 'float'):
+        return process_float(sub_ins)
+    elif(sub_ins['ast_type'] == 'complex'):
+        return process_complex(sub_ins)
 
 def process_index(instruction):
     if(instruction['ast_type'] == 'Num'):
@@ -18,7 +37,7 @@ def process_index(instruction):
     elif(instruction['ast_type'] == 'Str'):
         return process_str(instruction)
     else:
-        #Se for var, o que fazemos???? Taint a tudo because we have no clue ou solução mais avançada
+        #Se for var ou função, o que fazemos???? Taint a tudo because we have no clue ou solução mais avançada
         return -1
 
 def process_value(instruction):
@@ -36,29 +55,40 @@ def process_subscript(instruction):
 def process_tuple(instruction):
     var = ()
     for elt in instruction['elts']:
-        if(elt['ast_type'] == 'Name'):
-            var = var + (process_name(elt))
-        elif(elt['ast_type'] == 'Subscript'):
-            var = var + (process_subscript(elt))
-        elif(elt['ast_type'] == 'Num'):
-            var = var + (process_num(elt))
-        elif(elt['ast_type'] == 'Str'):
-            var = var + (process_str(elt))
+        var = var + (processing(elt),)
     return var
 
 def process_list(instruction):
     l = []
     for elt in instruction['elts']:
-        if(elt['ast_type'] == 'Name'):
-            l.append(process_name(elt))
-        elif(elt['ast_type'] == 'Str'):
-            l.append(process_str)
-        elif(elt['ast_type'] == 'List'):
-            l.append(process_list(elt))
-        elif(elt['ast_type'] == 'Tuple'):
-            l.append(process_tuple(elt))
-            #process dictionary, set, function, booleans, binary_ops
-    return l    
+        l.append(processing(elt))
+    return l
+
+def process_set(instruction):
+    elts = instruction['elts']
+    s = {processing(elts[0])}
+    for i in range(1, len(elts)):
+        s.add(processing(elts[i]))
+    return s
+
+def process_dicti(instruction):
+    keys = []
+    for key in instruction['keys']:
+        keys.append(processing(key))
+    vals = []
+    for value in instruction['values']:
+        vals.append(processing(value))
+    dicti = {}
+    for i in range(0, len(keys)):
+        dicti[keys[i]] = vals[i]
+    return dicti
+
+#acabar
+def process_func(instruction):
+    func_name = process_name(instruction['func'])
+
+    return "cenas"
+    
 
 def process_assign(instruction):
     var = []
@@ -73,17 +103,41 @@ def process_assign(instruction):
             var.append([process_subscript(target)])
                 
     value = instruction['value']
-    if(value['ast_type'] == 'Name'):
-        vals = [process_num(value)]
+    #type bytes
+    if(isinstance(value, str)): 
+        vals = "\"untaint\""
     elif(value['ast_type'] == 'Tuple'):
         vals = process_tuple(value)
-    elif(value['ast_type'] == 'Subscript'):
-        vals = [process_subscript(value)]
-    elif(value['ast_type'] == 'Num'):
-        vals = [process_num(value)]
-    elif(value['ast_type'] == 'Str'):
-        vals = [process_str(value)]
-    #acabar!!!
+    else:
+        vals = [processing(value)]
+    
+    dicti = {}
+    for l in var:
+        for i in range(0, len(l)):
+            dicti[l[i]] = vals[i]
+    print(dicti) 
+    return dicti
 
-
-
+def processing(instruction):
+    #type bytes
+    if(isinstance(instruction, str)):
+        return "\"untaint\""
+    elif(instruction['ast_type'] == 'Name'):
+         return process_name(instruction)
+    elif(instruction['ast_type'] == 'Tuple'):
+        return process_tuple(instruction)
+    elif(instruction['ast_type'] == 'Subscript'):
+        return process_subscript(instruction)
+    elif(instruction['ast_type'] == 'Num'):
+        return process_num(instruction)
+    elif(instruction['ast_type'] == 'Str'):
+        return process_str(instruction)
+    elif(instruction['ast_type'] == 'NameConstant'):
+        return process_boolean(instruction)
+    elif(instruction['ast_type'] == 'List'):
+        return process_list(instruction)
+    elif(instruction['ast_type'] == 'Dict'):
+        return process_dicti(instruction)
+    elif(instruction['ast_type'] == 'Set'):
+        return process_set(instruction)
+    #process function, binary_ops

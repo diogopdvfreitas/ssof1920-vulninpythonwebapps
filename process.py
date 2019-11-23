@@ -1,25 +1,31 @@
+from taint import Taintdness
+from detection import detect_sources
+from detection import detect_sanitizers
+from detection import detect_sinks
+from detection import detect_user
+
 def process_name(instruction):
     return instruction['id']
 
 def process_str(instruction):
-    string = "\"" + instruction['s'] + "\""
+    #string = "\"" + instruction['s'] + "\""
     #return string
-    return "\"untaint\""
+    return Taintdness(False, "", "", "", "")
 
 def process_boolean(instruction):
     #return instruction['value']
-    return "\"untaint\""
+    return Taintdness(False, "", "", "", "")
 
 def process_float(instruction):
     #return instruction['n']
-    return "\"untaint\""
+    return Taintdness(False, "", "", "", "")
 
 def process_int(instruction):
     #return instruction['n']
-    return "\"untaint\""
+    return Taintdness(False, "", "" , "", "")
 
 def process_complex(instruction):
-    return "\"untaint\""
+    return Taintdness(False, "", "", "", "")
     #return instruction['i']
 
 def process_num(instruction):
@@ -33,9 +39,9 @@ def process_num(instruction):
 
 def process_index(instruction):
     if(instruction['ast_type'] == 'Num'):
-        return process_num(instruction['n'])
+        return instruction['n']['n']
     elif(instruction['ast_type'] == 'Str'):
-        return process_str(instruction)
+        return "\"" + instruction['s'] + "\""
     else:
         #Se for var ou função, o que fazemos???? Taint a tudo because we have no clue ou solução mais avançada
         return -1
@@ -47,8 +53,10 @@ def process_value(instruction):
         return process_subscript(instruction)
 
 def process_subscript(instruction):
-    index = process_index(instruction['slice'])
+    index = process_index(instruction['slice']['value'])
     value = process_value(instruction['value'])
+    #create object???  use isinstance in main??? (necessary to correct in order to access collections in the dictionary var)
+    #TODO
     var = value + '[' + str(index) + ']'
     return var
 
@@ -75,6 +83,8 @@ def process_dicti(instruction):
     keys = []
     for key in instruction['keys']:
         keys.append(processing(key))
+        #FIX THIS WHEN FUNCTION
+        #TODO
     vals = []
     for value in instruction['values']:
         vals.append(processing(value))
@@ -85,12 +95,41 @@ def process_dicti(instruction):
 
 #acabar
 def process_func(instruction):
-    func_name = process_name(instruction['func'])
-
-    return "cenas"
+    par = []
+    for arg in instruction['args']:
+        par.append(processing(arg))
+    f_name = processing(instruction['func'])
+    if(detect_sources(f_name, vulns)):
+        #get("123")
+        if(isinstance(par[0], Taintdness)):
+            return Taintdness(False, "", "", "", "")
+        else:
+            return Taintdness(True, par[0], "", "", "")
+    elif(detect_sanitizers(f_name, vulns)):
+        if(isinstance(par[0], Taintdness)):
+            taint = par[0]
+            taint.set_sanitizer(f_name)
+            return taint
+        else:
+            return Taintdness(None, "", f_name, "", par[0])
+    elif(detect_sinks(f_name, vulns)):
+        if(isinstance(par[0], Taintdness)):
+            taint = par[0]
+            taint.set_sink(f_name)
+            return taint
+        else:    
+            return Taintdness(None, "", "", f_name, par[0])
+    elif(detect_user(f_name, user_funcs)):
+        #TODO
+        return Taintdness(False, "", "", "", "")
+    return Taintdness(False, "", "", "", "")
     
 
-def process_assign(instruction):
+def process_assign(instruction, vulnerabilities, user_functions):
+    global vulns
+    vulns = vulnerabilities
+    global user_funcs
+    user_funcs = user_functions
     var = []
     for target in instruction['targets']:
         '''Name, tuple, Subscript (Que tenha descobrido)'''
@@ -105,7 +144,7 @@ def process_assign(instruction):
     value = instruction['value']
     #type bytes
     if(isinstance(value, str)): 
-        vals = "\"untaint\""
+        vals = Taintdness(False, "", "", "", "")
     elif(value['ast_type'] == 'Tuple'):
         vals = process_tuple(value)
     else:
@@ -115,13 +154,14 @@ def process_assign(instruction):
     for l in var:
         for i in range(0, len(l)):
             dicti[l[i]] = vals[i]
+    
     print(dicti) 
     return dicti
 
 def processing(instruction):
     #type bytes
     if(isinstance(instruction, str)):
-        return "\"untaint\""
+        return Taintdness(False, "", "", "", "")
     elif(instruction['ast_type'] == 'Name'):
          return process_name(instruction)
     elif(instruction['ast_type'] == 'Tuple'):
@@ -140,4 +180,6 @@ def processing(instruction):
         return process_dicti(instruction)
     elif(instruction['ast_type'] == 'Set'):
         return process_set(instruction)
+    elif(instruction['ast_type'] == 'Call'):
+        return process_func(instruction)
     #process function, binary_ops

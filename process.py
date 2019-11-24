@@ -1,8 +1,8 @@
 from taint import Taintdness
-from detection import detect_sources
-from detection import detect_sanitizers
-from detection import detect_sinks
-from detection import detect_user
+#from detection import detect_sources
+#from detection import detect_sanitizers
+#from detection import detect_sinks
+#from detection import detect_user
 
 def process_name(instruction):
     return instruction['id']
@@ -61,10 +61,10 @@ def process_subscript(instruction):
     return var
 
 def process_tuple(instruction):
-    var = ()
+    var = []
     for elt in instruction['elts']:
-        var = var + (processing(elt),)
-    return var
+        var += [processing(elt)]
+    return tuple(var)
 
 def process_list(instruction):
     l = []
@@ -132,30 +132,30 @@ def process_assign(instruction, vulnerabilities, user_functions):
     user_funcs = user_functions
     var = []
     for target in instruction['targets']:
-        '''Name, tuple, Subscript (Que tenha descobrido)'''
+        '''Name, tuple, Subscript (Que tenha descoberto)'''
         #Examplos para dictionary, tuples, etc
         if(target['ast_type'] == 'Name'):
             var.append([process_name(target)])
         elif(target['ast_type'] == 'Tuple'):
-            var.append(process_tuple(target))
+            var.append([process_tuple(target)])
         elif(target['ast_type'] == 'Subscript'):
             var.append([process_subscript(target)])
                 
     value = instruction['value']
     #type bytes
-    if(isinstance(value, str)): 
-        vals = Taintdness(False, "", "", "", "")
-    elif(value['ast_type'] == 'Tuple'):
-        vals = process_tuple(value)
-    else:
-        vals = [processing(value)]
+    vals = [[processing(value)]]
     
     dicti = {}
-    for l in var:
-        for i in range(0, len(l)):
-            dicti[l[i]] = vals[i]
     
-    print(dicti) 
+    for i in range(len(var)):
+       for j in range(len(var[i])):
+           if(isinstance(var[i][j], tuple)):
+               for k in range(len(var[i][j])):
+                   dicti[var[i][j][k]] = vals[i][j][k]
+           else:
+               dicti[var[i][j]] = vals[i][j]
+
+    #print(dicti) 
     return dicti
 
 def processing(instruction):

@@ -97,20 +97,31 @@ def process_calls(instruction, f_name, processed):
     vuln_sinks = detect(f_name, vulns, "sinks")
     if vuln_sinks != []:
         for arg in instruction['args']:
-            aux = [x for x in vuln_sinks if x in processing(arg, processed).get_vulns()] #THERE IS VULN IF aux != [] 
+            aux = [x for x in vuln_sinks if x in processing(arg, processed).get_vulns()] 
             if aux != []:
                print(aux[0])
+               #TODO
     
 
 def process_func(instruction, processed):
     f_name = processing(instruction['func'], processed, False)
-    vuln_sources = detect(f_name, vulns, "sources")
     
+    vuln_sources = detect(f_name, vulns, "sources")
     if vuln_sources != []:
         return Taintdness(True, vuln = vuln_sources, source = f_name)
     
     process_calls(instruction, f_name, processed)
-
+    
+    vuln_sanitizers = detect(f_name, vulns, "sanitizers")
+    if vuln_sanitizers != []:
+        for arg in instruction['args']:
+            taint = processing(arg, processed)
+            aux = [x for x in vuln_sanitizers if x in taint.get_vulns()]
+            if aux != []:
+               taint.add_sanitizers(f_name)
+               return taint
+            
+    
     return Taintdness()
      
 

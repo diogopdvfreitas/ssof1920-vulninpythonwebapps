@@ -35,7 +35,7 @@ def taint_taintdness(assign, key):
                     found_vulns.append(vuln_found(var_taint, vulns))
         var[key] = assign
         return assign
-    elif(len(assign.get_sanitizer()) != 0):
+    elif(len(assign.get_sanitizers()) != 0):
         if(key in var):
             var_taint = var[key]
             var_taint.set_sanitizer(assign.get_sanitizer())
@@ -100,19 +100,19 @@ processed = {}
 
 for instruction in program:
     
-    if instruction['ast_type'] == 'Assign':
+    if instruction['ast_type'] == 'Assign': #nao deviamos ter para quando se entra, por exemplo, dentro duma funçao, tbm? ou seja, quando nao é um assign e assim?
         dicti = process_assign(instruction, vulns, user_func, processed)
         processed = {**processed, **dicti}
         
-        for key in dicti:
-            assign = dicti[key]
+        for key in processed:
+            assign = processed[key]
             p_assign(assign, key)
         print(var)
         
-    elif instruction['ast_type'] == 'Expr':
+    elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
         process_calls(instruction, processing(instruction['func']), processed)
                 
-
+    
     #Augassign - a += 2
             
         

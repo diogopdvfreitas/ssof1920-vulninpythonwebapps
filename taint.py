@@ -1,13 +1,13 @@
 class Taintdness:
-    def __init__(self, taint = False, vuln = [], source = [], sanitizer = [], sink = []):
+    def __init__(self, taint = False, vuln = [], source = "", sanitizers = [], sink = []):
         self.taint = taint
         self.source = source
-        self.sanitizer = sanitizer
+        self.sanitizers = sanitizers
         self.sink = sink
         self.vuln = vuln
     
-    def set_sanitizer(self, sanitizer):
-        self.sanitizer = sanitizer
+    def set_sanitizers(self, sanitizers):
+        self.sanitizers = sanitizers
     
     def set_sink(self, sink):
         self.sink = sink
@@ -24,8 +24,8 @@ class Taintdness:
     def get_source(self):
         return self.source
 
-    def get_sanitizer(self):
-        return self.sanitizer
+    def get_sanitizers(self):
+        return self.sanitizers
 
     def get_sink(self):
         return self.sink
@@ -33,8 +33,11 @@ class Taintdness:
     def get_vuln(self):
         return self.vuln
     
+    def add_sanitizer(self, sanitizers):
+        self.sanitizer.append(sanitizers)
+    
     def __repr__(self):
-        return 'Taintdness:(taint=' + str(self.taint) + ' source=' + str(self.source) + ' sanitizer=' + str(self.sanitizer) + \
+        return 'Taintdness:(taint=' + str(self.taint) + ' source=' + self.source + ' sanitizers=' + str(self.sanitizers) + \
                 ' sink=' + str(self.sink) + ')'
 
 

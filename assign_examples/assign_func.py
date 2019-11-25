@@ -1,4 +1,4 @@
 def add(a, b):
     return a + b
 
-c = add(1,2)
+c = mogrify(1,2)

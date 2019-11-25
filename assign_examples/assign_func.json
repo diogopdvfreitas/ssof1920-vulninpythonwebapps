@@ -93,7 +93,7 @@
             "args":[ 
                { 
                   "ast_type":"Num",
-                  "col_offset":8,
+                  "col_offset":12,
                   "lineno":4,
                   "n":{ 
                      "ast_type":"int",
@@ -103,7 +103,7 @@
                },
                { 
                   "ast_type":"Num",
-                  "col_offset":10,
+                  "col_offset":14,
                   "lineno":4,
                   "n":{ 
                      "ast_type":"int",
@@ -120,7 +120,7 @@
                "ctx":{ 
                   "ast_type":"Load"
                },
-               "id":"add",
+               "id":"mogrify",
                "lineno":4
             },
             "keywords":[ 

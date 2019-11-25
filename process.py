@@ -99,7 +99,7 @@ def process_calls(instruction, f_name, processed):
         for arg in instruction['args']:
             aux = [x for x in vuln_sinks if x in processing(arg, processed).get_vulns()] 
             if aux != []:
-               print(aux[0])
+               print(aux[0]) #FAZER RETURN FINAL
                #TODO
     
 

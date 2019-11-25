@@ -100,7 +100,7 @@ processed = {}
 
 for instruction in program:
     
-    if instruction['ast_type'] == 'Assign': #nao deviamos ter para quando se entra, por exemplo, dentro duma funçao, tbm? ou seja, quando nao é um assign e assim?
+    if instruction['ast_type'] == 'Assign':
         dicti = process_assign(instruction, vulns, user_func, processed)
         processed = {**processed, **dicti}
         
@@ -112,7 +112,20 @@ for instruction in program:
     elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
         process_calls(instruction, processing(instruction['func']), processed)
                 
-    
+    elif instruction['ast_type'] == 'FunctionDef': #quando se define o corpo duma funçao
+        for instruction_func in instruction['body']:
+            if instruction_func['ast_type'] == 'Assign': 
+                dictf = process_assign(instruction_func, vulns, user_func, processed)
+                processed = {**processed, **dictf}
+            
+                for key in processed:
+                    assign = processed[key]
+                    p_assign(assign, key)
+                print(var)
+            
+            elif instruction_func['ast_type'] == 'Expr': 
+                process_calls(instruction_func, processing(instruction_func['func']), processed)      
+        
     #Augassign - a += 2
             
         

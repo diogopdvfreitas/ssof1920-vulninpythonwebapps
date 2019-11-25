@@ -1,16 +1,22 @@
 class Taintdness:
-    def __init__(self, taint, source, sanitizer, sink, param):
+    def __init__(self, taint = False, vuln = [], source = [], sanitizer = [], sink = []):
         self.taint = taint
         self.source = source
         self.sanitizer = sanitizer
         self.sink = sink
-        self.param = param
+        self.vuln = vuln
     
     def set_sanitizer(self, sanitizer):
         self.sanitizer = sanitizer
     
     def set_sink(self, sink):
         self.sink = sink
+    
+    def set_source(self, source):
+        self.source = source
+    
+    def set_vuln(self, vuln):
+        self.vuln = vuln
     
     def get_taint(self):
         return self.taint
@@ -24,12 +30,12 @@ class Taintdness:
     def get_sink(self):
         return self.sink
     
-    def get_param(self):
-        return self.param
-
+    def get_vuln(self):
+        return self.vuln
+    
     def __repr__(self):
-        return 'Taintdness:(taint=' + str(self.taint) + ' source=' + self.source + ' sanitizer=' + self.sanitizer + \
-                ' sink=' + self.sink + ' param=' + self.param + ')'
+        return 'Taintdness:(taint=' + str(self.taint) + ' source=' + str(self.source) + ' sanitizer=' + str(self.sanitizer) + \
+                ' sink=' + str(self.sink) + ')'
 
 
 def vuln_found(tainted, vulns):

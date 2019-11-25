@@ -1,3 +1,20 @@
-'''def detect(vulnarabilities, instruction):
-    for vulnerability in vulnarabilities:
-        s'''
+          
+def detect(f_name, vulns, pattern_type):
+    l = []
+    for vuln in vulns:
+        if pattern_type == "sinks":
+            aux_vuln = vuln.get_sinks()
+            
+        elif pattern_type == "sources":
+            aux_vuln = vuln.get_sources()
+            
+        elif pattern_type == "sanitizers":
+            aux_vuln = vuln.get_sanitizers() 
+            
+        if f_name in aux_vuln:
+            l.append(vuln.get_vulnerability())
+            
+    return l
+            
+          
+          

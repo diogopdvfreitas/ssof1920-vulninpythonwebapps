@@ -5,14 +5,18 @@ from vulnerability import Vuln
 from taint import Taintdness
 from taint import vuln_found
 from process import process_assign
+from process import process_calls
+from process import processing
 from collections.abc import Sequence
 
 
 def p_assign(assign, key):
     if(isinstance(assign, Taintdness)):
         return taint_taintdness(assign, key)
+    
     elif(isinstance(assign, Sequence) and not isinstance(assign, (str, bytes, bytearray))):
         return taint_collections(assign, key)
+    
     elif(isinstance(assign,str)):
         return taint_var(assign, key)
 
@@ -70,7 +74,7 @@ def taint_collections(assign, key):
         return v_taint
 
 def taint_var(assign, key):
-    if(assign in var):
+    if assign in var:
         var[key] = var[assign]
         return var[assign]
     else:
@@ -78,7 +82,7 @@ def taint_var(assign, key):
         return var[key]
 
 
-if(len(sys.argv) != 3):
+if len(sys.argv) != 3:
     print("Please provide the program to be analyzed and the patterns")
     exit(0)
 
@@ -92,14 +96,21 @@ program = read_program(program_file)
 user_func = []
 var = {}
 found_vulns = []
+processed = {}
 
 for instruction in program:
-    if(instruction['ast_type'] == 'Assign'):
-        dicti = process_assign(instruction, vulns, user_func)
+    
+    if instruction['ast_type'] == 'Assign':
+        dicti = process_assign(instruction, vulns, user_func, processed)
+        processed = {**processed, **dicti}
+        
         for key in dicti:
             assign = dicti[key]
             p_assign(assign, key)
         print(var)
+        
+    elif instruction['ast_type'] == 'Expr':
+        process_calls(instruction, processing(instruction['func']), processed)
                 
 
     #Augassign - a += 2

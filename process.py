@@ -132,6 +132,9 @@ def process_func(instruction, processed):
             
     
     return Taintdness()
+
+def process_attribute(instruction, processed):
+    return processing(instruction['value'], processed, False)
      
 
 def process_assign(instruction, vulnerabilities, user_functions, processed):
@@ -201,4 +204,7 @@ def processing(instruction, processed, isRight = True):
     
     elif(instruction['ast_type'] == 'Call'):
         return process_func(instruction, processed)
+        
+    elif(instruction['ast_type'] == 'Attribute'):
+        return process_attribute(instruction, processed)
     #process function, binary_ops

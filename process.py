@@ -105,10 +105,10 @@ def process_calls(instruction, f_name, processed):
     if vuln_sinks != []:
         for arg in instruction['args']:
             arg_taint = processing(arg, processed) 
-            aux = [x for x in vuln_sinks if x in arg_taint.get_vuln()] 
+            aux = [x for x in vuln_sinks if x in arg_taint.get_vulns()] 
             if aux != []:
                for vuln in aux:
-                    source = arg_taint.get_source()
+                    source = arg_taint.get_sources()
                     sink = f_name
                     sanitizers = arg_taint.get_sanitizers()
                     l = get_sanitizer_vuln(sanitizers, vuln)
@@ -126,15 +126,14 @@ def process_calls(instruction, f_name, processed):
             elif(isinstance(arg, str)):
                 #if it is unknown, it could be a source just like in the project example
                 if processed[arg] == {}:
-                    return Taintdness(True, source = aux, sink=f_name)
+                    return Taintdness(True, sources = aux, sinks = [f_name])
     
-
 def process_func(instruction, processed):
     f_name = processing(instruction['func'], processed, False)
     
     vuln_sources = detect(f_name, vulns, "sources")
     if vuln_sources != []:
-        return Taintdness(True, vuln = vuln_sources, source = f_name)
+        return Taintdness(True, vulns = vuln_sources, sources = [f_name])
     
     process_calls(instruction, f_name, processed)
     
@@ -142,7 +141,7 @@ def process_func(instruction, processed):
     if vuln_sanitizers != []:
         for arg in instruction['args']:
             taint = processing(arg, processed)
-            aux = [x for x in vuln_sanitizers if x in taint.get_vuln()]
+            aux = [x for x in vuln_sanitizers if x in taint.get_vulns()]
             if aux != []:
                taint.add_sanitizers(f_name)
                return taint
@@ -152,7 +151,24 @@ def process_func(instruction, processed):
 
 def process_attribute(instruction, processed):
     return processing(instruction['value'], processed, False) + "." + instruction['attr']
-     
+
+def process_binaryOp(instruction, processed):
+    taint = Taintdness(True)
+    left = processing(instruction['left'], processed)
+    right = processing(instruction['right'], processed)
+    if left.get_taint():
+        taint.add_vulns(left.get_vulns())
+        taint.add_sources(left.get_sources())
+        taint.add_sanitizers(left.get_sanitizers())
+        taint.add_sinks(left.get_sinks())
+    
+    if right.get_taint():
+        taint.add_vulns(right.get_vulns())
+        taint.add_sources(right.get_sources())
+        taint.add_sanitizers(right.get_sanitizers())
+        taint.add_sinks(right.get_sinks())
+    
+    return taint
 
 def process_assign(instruction, vulnerabilities, processed):
     global vulns
@@ -189,7 +205,7 @@ def process_assign(instruction, vulnerabilities, processed):
 def processing(instruction, processed, isRight = True):
     #type bytes
     if(isinstance(instruction, str)):
-        return Taintdness(False, "", "", "", "")
+        return Taintdness(False, [], [], [], [])
     elif(instruction['ast_type'] == 'Name'):
         return process_name_right(instruction, processed) if isRight else process_name_left(instruction)
     

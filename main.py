@@ -23,7 +23,7 @@ def p_assign(assign, key):
 
 
 def taint_taintdness(assign, key):
-    if(len(assign.get_sink()) != 0):
+    if(len(assign.get_sinks()) != 0):
         if(assign.get_taint()):
             found_vulns.append(vuln_found(assign, vulns))
         else:
@@ -31,14 +31,14 @@ def taint_taintdness(assign, key):
             if(var_name in var):
                 var_taint = var[var_name]
                 if(var_taint.get_taint()):
-                    var_taint.set_sink(assign.get_sink())
+                    var_taint.set_sinks(assign.get_sink())
                     found_vulns.append(vuln_found(var_taint, vulns))
         var[key] = assign
         return assign
     elif(len(assign.get_sanitizers()) != 0):
         if(key in var):
             var_taint = var[key]
-            var_taint.set_sanitizer(assign.get_sanitizer())
+            var_taint.set_sanitizers(assign.get_sanitizers())
         else:
             var_taint = assign
         var[key] = var_taint
@@ -85,7 +85,7 @@ def taint_var(assign, key):
         var[key] = var[assign]
         return var[assign]
     else:
-        var[key] = Taintdness(False, "", "", "", "")
+        var[key] = Taintdness(False, [], [], [], [])
         return var[key]
     
 def p_code(program, vulns, processed):

@@ -111,7 +111,7 @@ def process_calls(instruction, f_name, processed):
                     source = arg_taint.get_sources()
                     sink = f_name
                     sanitizers = arg_taint.get_sanitizers()
-                    l = get_sanitizer_vuln(sanitizers, vuln)
+                    l = get_sanitizer_vuln(sanitizers, vuln, vulns)
                     sanitizer = ""
                     for san in l:
                         sanitizer += san + " "
@@ -143,7 +143,7 @@ def process_func(instruction, processed):
             taint = processing(arg, processed)
             aux = [x for x in vuln_sanitizers if x in taint.get_vulns()]
             if aux != []:
-               taint.add_sanitizers(f_name)
+               taint.add_sanitizer(f_name)
                return taint
             
     
@@ -239,6 +239,6 @@ def processing(instruction, processed, isRight = True):
     elif(instruction['ast_type'] == 'Attribute'):
         return process_attribute(instruction, processed)
 
-    elif(instruction['ast_type'] == 'BinOp'):
-        return process_binaryOp(instruction, processed)
+    #elif(instruction['ast_type'] == 'BinOp'):
+     #   return process_binaryOp(instruction, processed)
     #process function, binary_ops

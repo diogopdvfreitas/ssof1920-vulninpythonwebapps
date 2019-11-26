@@ -1,6 +1,8 @@
 from taint import Taintdness
 from detection import detect
 
+vulns = ""
+
 def process_name_left(instruction):
     return instruction['id'] 
 
@@ -138,7 +140,6 @@ def process_attribute(instruction, processed):
      
 
 def process_assign(instruction, vulnerabilities, processed):
-    global vulns
     vulns = vulnerabilities
     var = []
     for target in instruction['targets']:

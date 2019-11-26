@@ -106,9 +106,9 @@ def process_calls(instruction, f_name, processed):
                print(aux[0]) #FAZER RETURN FINAL
                #TODO
             #check if it is var
-            elif(isinstance(aux, str)):
+            elif(isinstance(arg, str)):
                 #if it is unknown, it could be a source just like in the project example
-                if processed[aux] == {}:
+                if processed[arg] == {}:
                     return Taintdness(True, source = aux, sink=f_name)
     
 

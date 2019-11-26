@@ -155,6 +155,7 @@ def process_attribute(instruction, processed):
      
 
 def process_assign(instruction, vulnerabilities, processed):
+    global vulns
     vulns = vulnerabilities
     var = []
     for target in instruction['targets']:

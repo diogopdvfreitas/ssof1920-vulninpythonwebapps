@@ -1,4 +1,4 @@
 def add(a, b):
     return a + b
 
-c = mogrify(1,2)
+c = instruction['value'](1,2)

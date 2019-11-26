@@ -89,7 +89,6 @@ def taint_var(assign, key):
         return var[key]
     
 def p_code(program, vulns, processed):
-    
     for instruction in program:
         if instruction['ast_type'] == 'Assign':
             dicti = process_assign(instruction, vulns, processed)
@@ -97,16 +96,19 @@ def p_code(program, vulns, processed):
             for key in processed:
                 assign = processed[key]
                 p_assign(assign, key)
-            print(var)
-            
         elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
             process_calls(instruction, processing(instruction['value'], processed), processed)
                     
         elif instruction['ast_type'] == 'FunctionDef': #quando se define o corpo duma funçao
             p_code(instruction['body'], vulns, processed)
         
-        elif instruction['ast_type'] == 'While' or instruction['ast_type'] == 'For' or instruction['ast_type'] == 'If':
+        elif instruction['ast_type'] == 'While' or instruction['ast_type'] == 'For':
             dictif =  p_code(instruction['body'], vulns, processed)
+            processed = {**processed, **dictif}
+        elif instruction['ast_type'] == 'If':
+            dictif =  p_code(instruction['body'], vulns, processed)
+            processed = {**processed, **dictif}
+            dictif =  p_code(instruction['orelse'], vulns, processed)
             processed = {**processed, **dictif}
             
     return processed
@@ -124,6 +126,7 @@ program = read_program(program_file)
 var = {}
 found_vulns = []
 processed = p_code(program, vulns, {})
+print(processed)
 
 
         

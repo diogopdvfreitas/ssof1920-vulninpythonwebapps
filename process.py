@@ -1,5 +1,6 @@
 from taint import Taintdness
 from detection import detect
+from detection import get_sanitizer_vuln
 
 vulns = ""
 
@@ -103,10 +104,24 @@ def process_calls(instruction, f_name, processed):
     vuln_sinks = detect(f_name, vulns, "sinks")
     if vuln_sinks != []:
         for arg in instruction['args']:
-            aux = [x for x in vuln_sinks if x in processing(arg, processed).get_vulns()] 
+            arg_taint = processing(arg, processed) 
+            aux = [x for x in vuln_sinks if x in arg_taint.get_vulns()] 
             if aux != []:
-               print(aux[0]) #FAZER RETURN FINAL
-               #TODO
+               for vuln in aux:
+                    source = arg_taint.get_source()
+                    sink = f_name
+                    sanitizers = arg_taint.get_sanitizers()
+                    l = get_sanitizer_vuln(sanitizers, vuln)
+                    sanitizer = ""
+                    for san in l:
+                        sanitizer += san + " "
+                    dicti = {
+                        "vulnerability": vuln,
+                        "source": source,
+                        "sink": sink,
+                        "sanitizer": sanitizer
+                        }
+                    print([dicti])
             #check if it is var
             elif(isinstance(arg, str)):
                 #if it is unknown, it could be a source just like in the project example
@@ -136,7 +151,7 @@ def process_func(instruction, processed):
     return Taintdness()
 
 def process_attribute(instruction, processed):
-    return processing(instruction['value'], processed, False)
+    return processing(instruction['value'], processed, False) + "." + instruction['attr']
      
 
 def process_assign(instruction, vulnerabilities, processed):

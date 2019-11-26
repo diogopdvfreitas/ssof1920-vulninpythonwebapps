@@ -87,6 +87,29 @@ def taint_var(assign, key):
     else:
         var[key] = Taintdness(False, "", "", "", "")
         return var[key]
+    
+def p_code(program, vulns, processed):
+    
+    for instruction in program:
+        if instruction['ast_type'] == 'Assign':
+            dicti = process_assign(instruction, vulns, processed)
+            processed = {**processed, **dicti}
+            for key in processed:
+                assign = processed[key]
+                p_assign(assign, key)
+            print(var)
+            
+        elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
+            process_calls(instruction, processing(instruction['value'], processed), processed)
+                    
+        elif instruction['ast_type'] == 'FunctionDef': #quando se define o corpo duma funçao
+            p_code(instruction['body'], vulns, processed)
+        
+        elif instruction['ast_type'] == 'While' or instruction['ast_type'] == 'For' or instruction['ast_type'] == 'If':
+            dictif =  p_code(instruction['body'], vulns, processed)
+            processed = {**processed, **dictif}
+            
+    return processed
 
 
 if len(sys.argv) != 3:
@@ -98,39 +121,11 @@ vulns = read_patterns(pattern_file)
 
 program_file = sys.argv[1]
 program = read_program(program_file)
-
-
-user_func = []
 var = {}
 found_vulns = []
-processed = {}
+processed = p_code(program, vulns, {})
 
-for instruction in program:
-    
-    if instruction['ast_type'] == 'Assign':
-        dicti = process_assign(instruction, vulns, user_func, processed)
-        processed = {**processed, **dicti}
-        for key in processed:
-            assign = processed[key]
-            p_assign(assign, key)
-        print(var)
-        
-    elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
-        process_calls(instruction, processing(instruction['func']), processed)
-                
-    elif instruction['ast_type'] == 'FunctionDef': #quando se define o corpo duma funçao
-        for instruction_func in instruction['body']:
-            if instruction_func['ast_type'] == 'Assign': 
-                dictf = process_assign(instruction_func, vulns, user_func, processed)
-                processed = {**processed, **dictf}
-            
-                for key in processed:
-                    assign = processed[key]
-                    p_assign(assign, key)
-                print(var)
-            
-            elif instruction_func['ast_type'] == 'Expr': 
-                process_calls(instruction_func, processing(instruction_func['func']), processed)      
+
         
     #Augassign - a += 2
             

@@ -137,11 +137,9 @@ def process_attribute(instruction, processed):
     return processing(instruction['value'], processed, False)
      
 
-def process_assign(instruction, vulnerabilities, user_functions, processed):
+def process_assign(instruction, vulnerabilities, processed):
     global vulns
     vulns = vulnerabilities
-    global user_funcs
-    user_funcs = user_functions
     var = []
     for target in instruction['targets']:
         '''Name, tuple, Subscript (Que tenha descoberto)'''

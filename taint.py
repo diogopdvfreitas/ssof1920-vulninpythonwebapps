@@ -34,7 +34,7 @@ class Taintdness:
         return self.vuln
     
     def add_sanitizer(self, sanitizers):
-        self.sanitizer.append(sanitizers)
+        self.sanitizers.append(sanitizers)
     
     def __repr__(self):
         return 'Taintdness:(taint=' + str(self.taint) + ' source=' + self.source + ' sanitizers=' + str(self.sanitizers) + \

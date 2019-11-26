@@ -38,7 +38,7 @@ def taint_taintdness(assign, key):
     elif(len(assign.get_sanitizers()) != 0):
         if(key in var):
             var_taint = var[key]
-            var_taint.set_sanitizer(assign.get_sanitizer())
+            var_taint.set_sanitizers(assign.get_sanitizers())
         else:
             var_taint = assign
         var[key] = var_taint

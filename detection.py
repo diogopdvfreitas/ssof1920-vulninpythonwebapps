@@ -16,7 +16,11 @@ def detect(f_name, vulns, pattern_type):
             
     return l
             
-def get_sanitizer_vuln(sanitizers, vuln): 
+def get_sanitizer_vuln(sanitizers, vuln, vulns): 
+    for v in vulns:
+        if(vuln == v.get_vulnerability()):
+            vuln = v
+            break
     aux_vuln = vuln.get_sanitizers()
     l = [x for x in sanitizers if x in aux_vuln]
     return l

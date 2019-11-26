@@ -2,9 +2,9 @@
     {
       "vulnerability": "SQL injection",
       "sources": [
-        "a", "b"
+        "a", "b", "c", "d"
       ],
-      "sanitizers": [],
+      "sanitizers": ["t"],
       "sinks": [
         "z",
         "s", "y"

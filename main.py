@@ -14,7 +14,7 @@ def p_assign(assign, key):
     if(isinstance(assign, Taintdness)):
         return taint_taintdness(assign, key)
     
-    elif(isinstance(assign, Sequence) and not isinstance(assign, (str, bytes, bytearray))):
+    elif((isinstance(assign, Sequence) and not isinstance(assign, (str, bytes, bytearray)) or isinstance(assign, set)) or isinstance(assign, dict)):
         return taint_collections(assign, key)
     
     elif(isinstance(assign,str)):
@@ -49,29 +49,36 @@ def taint_taintdness(assign, key):
 
 
 def taint_collections(assign, key):
-    if(isinstance(assign, list)):
-        v_taint = []
-        for l in assign:
-            v_taint.append(p_assign(l, key))
-        var[key] = v_taint
-        return v_taint
-    elif(isinstance(assign, tuple)):
-        v_taint = ()
-        for t in assign:
-            v_taint = v_taint + (p_assign(t, key),)
-        var[key] = v_taint
-        return v_taint
+    if(isinstance(assign, list) or isinstance(assign, tuple)):
+        '''#v_taint = []
+        for i in range(0,len(assign)):
+            k = key + '[' + str(i) + ']'
+            aux = p_assign(assign[i], k)
+            if(aux != None):
+                var[k] = aux
+            #v_taint.append(var[k])
+        #return v_taint'''
+        for i in range(0,len(assign)):
+            k = key + '[' + str(i) + ']'
+            aux = p_assign(assign[i], k)
+            if(aux != None):
+                var[k] = aux
     elif(isinstance(assign, set)):
-        v_taint = {p_assign(assign[0], key)}
-        for i in range(1, len(assign)):
-            v_taint.add()(p_assign(assign[i], key))
-        var[key] = v_taint
-        return v_taint
+        for i in range(0, len(assign)):
+            el = assign.pop()
+            k = key + '[' + str(i) + ']'
+            aux = p_assign(el, k)
+            if(aux != None):
+                var[k] = aux
     elif(isinstance(assign, dict)):
-        v_taint = {}
         for k in assign:
-            v_taint[k] = p_assign(v_taint[k], key)
-        return v_taint
+            ky = key + '[\"' + k + '\"]'
+            if(isinstance(assign[k], Taintdness)):
+                var[ky] = assign[k]
+            else:
+                aux = p_assign(assign[k], ky)
+                if(aux != None):
+                     var[ky] = aux
 
 def taint_var(assign, key):
     if assign in var:
@@ -103,7 +110,6 @@ for instruction in program:
     if instruction['ast_type'] == 'Assign':
         dicti = process_assign(instruction, vulns, user_func, processed)
         processed = {**processed, **dicti}
-        
         for key in processed:
             assign = processed[key]
             p_assign(assign, key)

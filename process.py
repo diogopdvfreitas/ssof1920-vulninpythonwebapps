@@ -82,7 +82,11 @@ def process_set(instruction, processed):
 def process_dicti(instruction, processed):
     keys = []
     for key in instruction['keys']:
-        keys.append(processing(key, processed))
+        if(key['ast_type'] == 'Num'):
+            k = key['n']['n']
+        elif(key['ast_type'] == 'Str'):
+            k = key['s'] 
+        keys.append(k)
         #FIX THIS WHEN FUNCTION
         #TODO
     vals = []
@@ -101,6 +105,9 @@ def process_calls(instruction, f_name, processed):
             if aux != []:
                print(aux[0]) #FAZER RETURN FINAL
                #TODO
+            elif(isinstance(aux, str)):
+                if processed[aux] == {}:
+                    return Taintdness(True, source = aux, sink=f_name)
     
 
 def process_func(instruction, processed):
@@ -156,7 +163,6 @@ def process_assign(instruction, vulnerabilities, user_functions, processed):
                    dicti[var[i][j][k]] = vals[i][j][k]
            else:
                dicti[var[i][j]] = vals[i][j]
-
     #print(dicti) 
     return dicti
 

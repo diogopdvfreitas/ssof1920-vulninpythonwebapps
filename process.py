@@ -105,10 +105,7 @@ def process_calls(instruction, f_name, processed):
     if vuln_sinks != []:
         for arg in instruction['args']:
             arg_taint = processing(arg, processed) 
-            print('FFFFF')
-            print(vuln_sinks)
             aux = [x for x in vuln_sinks if x in arg_taint.get_vuln()] 
-            print(aux)
             if aux != []:
                for vuln in aux:
                     source = arg_taint.get_source()

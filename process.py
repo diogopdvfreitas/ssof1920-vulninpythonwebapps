@@ -156,7 +156,7 @@ def process_calls(instruction, f_name):
                 sink = [f_name]
                 sanitizers = arg_taint.get_sanitizers()
                 dicti = {
-                    'vulnerability': v,
+                    vulnerability": v,
                     "source": source,
                     "sink": sink,
                     "sanitizer": sanitizers

@@ -202,6 +202,13 @@ def process_binaryOp(instruction):
     taint = Taintdness(True)
     left = processing(instruction['left'])
     right = processing(instruction['right'])
+    if(isinstance(left, tuple) or isinstance(right, tuple)):
+        if isinstance(left, tuple) and isinstance(right, tuple):
+            return left + right
+        elif isinstance(left, tuple):
+            return left
+        else:
+            return right
     if left.get_taint():
         taint.add_vulns(left.get_vulns())
         taint.add_sources(left.get_sources())

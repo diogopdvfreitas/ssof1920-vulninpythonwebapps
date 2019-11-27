@@ -82,8 +82,6 @@ def p_code(program):
         if instruction['ast_type'] == 'Assign':
             dicti = process_assign(instruction)
             cfg.processed = {**cfg.processed, **dicti}
-            for key in cfg.processed:
-                assign = cfg.processed[key]
         elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
             process_calls(instruction, processing(instruction['value']))
                     
@@ -127,13 +125,12 @@ if __name__ == "__main__":
     cfg.init_global_variables(pattern_file)
 
     program = read_program(program_file)
-    found_vulns = []
     p_code(program)
 
     print(cfg.processed)
 
-
-        
+    write_output(program_file, cfg.found_vulns)
+    
     #Augassign - a += 2
             
         

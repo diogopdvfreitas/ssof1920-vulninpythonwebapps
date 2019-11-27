@@ -17,22 +17,16 @@ def detect(f_name, pattern_type):
             
     return l
             
-def get_sanitizer_vuln(sanitizers, vuln): 
-    """ for v in vulns:
-        if(vuln == v.get_vulnerability()):
-            vuln = v
+def get_sanitizer_vuln(sanitizers, v): 
+    for vuln in cfg.vulns:
+        if(v == vuln.get_vulnerability()):
+            aux = vuln
             break
-    aux_vuln = vuln.get_sanitizers()
+    aux_vuln = aux.get_sanitizers()
     l = [x for x in sanitizers if x in aux_vuln]
-    return l """
-    aux_vuln = vuln.get_sanitizers()
-    l = [x for x in sanitizers if x in aux_vuln]
-    return l
+    return l 
 
 def get_vuln(sink):
     for vuln in cfg.vulns:
         if sink in vuln.get_sinks():
-            return vuln.get_vulnerability()
-        
-
-            
+            return vuln.get_vulnerability()     

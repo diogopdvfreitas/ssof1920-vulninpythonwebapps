@@ -12,29 +12,22 @@ def process_name_right(instruction):
         return cfg.processed[instruction['id']]
     else:
         return Taintdness(True, sources=[instruction['id']])
-    '''Changed -attempt'''
-    #return processed[instruction['id']] if instruction['id'] in processed.keys() else instruction['id']
+    
 
 def process_str(instruction):
-    #string = "\"" + instruction['s'] + "\""
-    #return string
     return Taintdness()
 
 def process_boolean(instruction):
-    #return instruction['value']
     return Taintdness()
 
 def process_float(instruction):
-    #return instruction['n']
     return Taintdness()
 
 def process_int(instruction):
-    #return instruction['n']
     return Taintdness()
 
 def process_complex(instruction):
     return Taintdness()
-    #return instruction['i']
 
 def process_num(instruction):
     sub_ins = instruction['n']
@@ -51,8 +44,6 @@ def process_index(instruction):
     elif(instruction['ast_type'] == 'Str'):
         return "\"" + instruction['s'] + "\""
     else:
-        #Se for var ou função, o que fazemos???? Taint a tudo because we have no clue ou solução mais avançada propagar???
-        #TODO IF PROPAGAR
         return -1
 
 def process_value(instruction):
@@ -103,8 +94,6 @@ def process_dicti(instruction):
         elif(key['ast_type'] == 'Str'):
             k = key['s'] 
         keys.append(k)
-        #FIX THIS WHEN FUNCTION
-        #TODO
     vals = []
     for value in instruction['values']:
         vals.append(processing(value))
@@ -113,63 +102,31 @@ def process_dicti(instruction):
         dicti[keys[i]] = vals[i]
     return dicti
 
-""" def process_calls(instruction, f_name, processed):
-    vuln_sinks = detect(f_name, vulns, "sinks")
-    if vuln_sinks != []:
-        for arg in instruction['args']:
-            arg_taint = processing(arg, processed) 
-            #aux = [x for x in vuln_sinks if x in arg_taint.get_vulns()]
-            print(arg_taint) 
-            #if aux != []
-            if arg_taint.get_taint():
-               print("ola")
-               for vuln in aux:
-                    source = arg_taint.get_sources()
-                    sink = f_name
-                    sanitizers = arg_taint.get_sanitizers()
-                    l = get_sanitizer_vuln(sanitizers, vuln, vulns)
-                    sanitizer = ""
-                    for san in l:
-                        sanitizer += san + " "
-                    dicti = {
-                        "vulnerability": vuln,
-                        "source": source,
-                        "sink": sink,
-                        "sanitizer": sanitizer
-                        }
-                    #TODO
-                    print([dicti])
-            #check if it is var
-            elif(isinstance(arg, str)):
-                #if it is unknown, it could be a source just like in the project example
-                if processed[arg] == {}:
-                    return Taintdness(True, sources = aux, sinks = [f_name]) """
 
 def process_calls(instruction, f_name):
-    print("sink--f_name = ", f_name)
     vuln_sinks = detect(f_name, "sinks")
     if vuln_sinks != []:
         for arg in instruction['args']:
-            print("is Call vai a True")
             arg_taint = processing(arg)
             if arg_taint.get_taint():
                 v = get_vuln(f_name)
                 source = arg_taint.get_sources()
-                sink = [f_name]
-                sanitizers = arg_taint.get_sanitizers()
+                sink = [f_name] 
+                sanitizers = get_sanitizer_vuln(arg_taint.get_sanitizers(), v)
                 dicti = {
                     "vulnerability": v,
                     "source": source,
                     "sink": sink,
                     "sanitizer": sanitizers
                     }
-                #TODO
                 print([dicti])
                 cfg.found_vulns.append(dicti)
 
 def process_func(instruction):
-    f_name = processing(instruction['func'], isRight = False, isCall = True)
-    
+    f_name = processing(instruction['func'], isRight = False)
+    if instruction['func']['ast_type'] == 'Attribute':
+        f_name = f_name.split('.')[-1]
+
     vuln_sources = detect(f_name, "sources")
     if vuln_sources != []:
         return Taintdness(True, vulns = vuln_sources, sources = [f_name])
@@ -185,37 +142,24 @@ def process_func(instruction):
                taint.add_sanitizers([f_name])
                return taint
             
-    
     return Taintdness()
 
+def process_attribute_left(instruction):
+    parent = processing(instruction['value'], False)
+    var = parent + '.' + instruction['attr']
+    return var
 
-
-def process_attribute(instruction, isRight, isCall):
-    if not isRight and isCall:
-        print("attr is call and is left ",instruction['attr'])
-        print("instruction['value']['ast_type'] == Attribute = ", instruction['value']['ast_type'])
-        if(instruction['value']['ast_type'] == "Attribute"):
-            k = str(process_attribute(instruction['value'], isRight, isCall = False)) + '.' + instruction['attr']
+def process_attribute_right(instruction):
+    if instruction['value']['ast_type'] == 'Attribute':
+        parent = processing(instruction['value'], False)
+        temp = parent + '.' + instruction['attr']
+        if temp in cfg.processed.keys():
+            var = cfg.processed[temp]
         else:
-            k = processing(instruction['value'], isRight)
-        if k in cfg.processed.keys():
-            return cfg.processed[k]
-        else:
-            return Taintdness(True, sources = instruction['attr'])  
-    if not isRight and not isCall:
-        print("attr is not call and is left ",instruction['attr'])
-        k = processing(instruction['value'], isRight) + '.' + instruction['attr']
-        if k in cfg.processed.keys():
-            return cfg.processed[k]
-        else:
-            return Taintdness(True, sources = instruction['attr']) 
-        
+            var = Taintdness(True, sources=[temp])
     else:
-        lef = processing(instruction['value'])
-        if lef in cfg.processed.keys():
-            return cfg.processed[lef]
-        else:
-            return Taintdness()  
+        var = processing(instruction['value'])
+    return var
     
 
 def process_binaryOp(instruction):
@@ -224,8 +168,7 @@ def process_binaryOp(instruction):
     right = processing(instruction['right'])
     if(isinstance(left, tuple) or isinstance(right, tuple)
         or isinstance(left, list) or isinstance(right, list)):
-        if (isinstance(left, tuple) and isinstance(right, tuple)) or \ 
-            (isinstance(left, list) and isinstance(right, list)):
+        if (isinstance(left, tuple) and isinstance(right, tuple)) or (isinstance(left, list) and isinstance(right, list)):
             return left + right
         elif isinstance(left, tuple) or isinstance(left, list):
             return left
@@ -283,11 +226,10 @@ def p_aux_collections(key, vals):
                 dictic[ky] = vals[k]
     return dictic
 
-
 def process_assign(instruction):
     var = []
     for target in instruction['targets']:
-        #Examplos para dictionary, tuples, etc
+        
         if target['ast_type'] == 'Name':
             var.append([process_name_left(target)])
             
@@ -297,8 +239,11 @@ def process_assign(instruction):
         elif target['ast_type'] == 'Subscript':
            var.append([process_subscript_left(target)])
 
+        elif target['ast_type'] == 'Attribute':
+            var.append([process_attribute_left(target)])
+
     value = instruction['value']
-    #type bytes
+    
     vals = [[processing(value)]]
     
     dicti = {}
@@ -321,7 +266,7 @@ def process_assign(instruction):
     #print(dicti) 
     return dicti
 
-def processing(instruction, isRight = True, isCall = False):
+def processing(instruction, isRight = True):
     #type bytes
     if(isinstance(instruction, str)):
         return Taintdness(False, [], [], [], [])
@@ -356,8 +301,8 @@ def processing(instruction, isRight = True, isCall = False):
         return process_func(instruction)
         
     elif(instruction['ast_type'] == 'Attribute'):
-        return process_attribute(instruction, False, isCall)
+        return process_attribute_right(instruction) if isRight else process_attribute_left(instruction)
 
     elif(instruction['ast_type'] == 'BinOp'):
         return process_binaryOp(instruction)
-    #process function, binary_ops
+    

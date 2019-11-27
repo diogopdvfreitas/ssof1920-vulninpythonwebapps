@@ -9,5 +9,15 @@
         "z",
         "s", "y", "w", "x", "execute"
       ]
+    },
+    {
+      "vulnerability": "XSS",
+      "sources": [
+        "a", "b", "c", "d", "get"
+      ],
+      "sanitizers": ["ok"],
+      "sinks": [
+        "jafoste"
+      ]
     }
   ]

@@ -180,11 +180,13 @@ def process_func(instruction):
 
 
 def process_attribute(instruction):
-    k = instruction['value']['id'] + '.' + instruction['attr']
+    lef = processing(instruction['value'])
+    a = lef.get_sources()
+    k = str(a) + '.' + instruction['attr']
     if k in cfg.processed.keys():
         return cfg.processed[k]
     else:
-        return Taintdness(True, sources=[instruction['value']['id']])
+        return Taintdness(True, sources=lef.get_sources)
     
 
 def process_binaryOp(instruction):

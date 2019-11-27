@@ -7,7 +7,7 @@
       "sanitizers": ["t"],
       "sinks": [
         "z",
-        "s", "y"
+        "s", "y", "w", "x"
       ]
     }
   ]

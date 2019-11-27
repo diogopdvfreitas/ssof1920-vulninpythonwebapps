@@ -18,7 +18,7 @@ class Taintdness:
     def add_vulns(self, vulns):
         for vuln in vulns:
             if vuln not in self.vulns:
-                self.vulns = self.sinks + vulns
+                self.vulns = self.vulns + vulns
 
     def get_sources(self):
         return self.sources
@@ -29,7 +29,7 @@ class Taintdness:
     def add_sources(self, sources):
         for source in sources:
             if source not in self.sources:
-                self.sources = self.sinks + sources
+                self.sources = self.sources + sources
 
     def get_sanitizers(self):
         return self.sanitizers
@@ -40,7 +40,7 @@ class Taintdness:
     def add_sanitizers(self, sanitizers):
         for sanitizer in sanitizers:
             if sanitizer not in self.sanitizers:
-                self.sanitizer = self.sinks + sanitizers
+                self.sanitizers = self.sanitizers + sanitizers
     
     def get_sinks(self):
         return self.sinks

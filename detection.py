@@ -1,7 +1,8 @@
-          
-def detect(f_name, vulns, pattern_type):
+import cfg
+
+def detect(f_name, pattern_type):
     l = []
-    for vuln in vulns:
+    for vuln in cfg.vulns:
         if pattern_type == "sinks":
             aux_vuln = vuln.get_sinks()
             
@@ -16,12 +17,22 @@ def detect(f_name, vulns, pattern_type):
             
     return l
             
-def get_sanitizer_vuln(sanitizers, vuln, vulns): 
-    for v in vulns:
+def get_sanitizer_vuln(sanitizers, vuln): 
+    """ for v in vulns:
         if(vuln == v.get_vulnerability()):
             vuln = v
             break
     aux_vuln = vuln.get_sanitizers()
     l = [x for x in sanitizers if x in aux_vuln]
+    return l """
+    aux_vuln = vuln.get_sanitizers()
+    l = [x for x in sanitizers if x in aux_vuln]
     return l
+
+def get_vuln(sink):
+    for vuln in cfg.vulns:
+        if sink in vuln.get_sinks():
+            return vuln.get_vulnerability()
+        
+
             

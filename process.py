@@ -1,14 +1,19 @@
+import cfg
+from detection import *
 from taint import Taintdness
-from detection import detect
-from detection import get_sanitizer_vuln
 
 vulns = ""
 
 def process_name_left(instruction):
     return instruction['id'] 
 
-def process_name_right(instruction, processed):
-    return processed[instruction['id']] if processed[instruction['id']] != {} else instruction['id']
+def process_name_right(instruction):
+    if instruction['id'] in cfg.processed.keys():
+        return cfg.processed[instruction['id']]
+    else:
+        return Taintdness(True, sources=[instruction['id']])
+    '''Changed -attempt'''
+    #return processed[instruction['id']] if instruction['id'] in processed.keys() else instruction['id']
 
 def process_str(instruction):
     #string = "\"" + instruction['s'] + "\""
@@ -63,26 +68,26 @@ def process_subscript(instruction):
     var = value + '[' + str(index) + ']'
     return var
 
-def process_tuple(instruction, processed, isRight):
+def process_tuple(instruction, isRight):
     var = []
     for elt in instruction['elts']:
-        var += [processing(elt, processed, isRight)]
+        var += [processing(elt, isRight)]
     return tuple(var)
 
-def process_list(instruction, processed):
+def process_list(instruction):
     l = []
     for elt in instruction['elts']:
-        l.append(processing(elt, processed))
+        l.append(processing(elt))
     return l
 
-def process_set(instruction, processed):
+def process_set(instruction):
     elts = instruction['elts']
-    s = {processing(elts[0], processed)}
+    s = {processing(elts[0])}
     for i in range(1, len(elts)):
-        s.add(processing(elts[i], processed))
+        s.add(processing(elts[i]))
     return s
 
-def process_dicti(instruction, processed):
+def process_dicti(instruction):
     keys = []
     for key in instruction['keys']:
         if(key['ast_type'] == 'Num'):
@@ -94,19 +99,22 @@ def process_dicti(instruction, processed):
         #TODO
     vals = []
     for value in instruction['values']:
-        vals.append(processing(value, processed))
+        vals.append(processing(value))
     dicti = {}
     for i in range(0, len(keys)):
         dicti[keys[i]] = vals[i]
     return dicti
 
-def process_calls(instruction, f_name, processed):
+""" def process_calls(instruction, f_name, processed):
     vuln_sinks = detect(f_name, vulns, "sinks")
     if vuln_sinks != []:
         for arg in instruction['args']:
             arg_taint = processing(arg, processed) 
-            aux = [x for x in vuln_sinks if x in arg_taint.get_vulns()] 
-            if aux != []:
+            #aux = [x for x in vuln_sinks if x in arg_taint.get_vulns()]
+            print(arg_taint) 
+            #if aux != []
+            if arg_taint.get_taint():
+               print("ola")
                for vuln in aux:
                     source = arg_taint.get_sources()
                     sink = f_name
@@ -121,41 +129,68 @@ def process_calls(instruction, f_name, processed):
                         "sink": sink,
                         "sanitizer": sanitizer
                         }
+                    #TODO
                     print([dicti])
             #check if it is var
             elif(isinstance(arg, str)):
                 #if it is unknown, it could be a source just like in the project example
                 if processed[arg] == {}:
-                    return Taintdness(True, sources = aux, sinks = [f_name])
+                    return Taintdness(True, sources = aux, sinks = [f_name]) """
+
+def process_calls(instruction, f_name):
+    vuln_sinks = detect(f_name, "sinks")
+    if vuln_sinks != []:
+        for arg in instruction['args']:
+            arg_taint = processing(arg)
+            if arg_taint.get_taint():
+                v = get_vuln(f_name)
+                source = arg_taint.get_sources()
+                sink = [f_name]
+                sanitizers = arg_taint.get_sanitizers()
+                dicti = {
+                    "vulnerability": v,
+                    "source": source,
+                    "sink": sink,
+                    "sanitizer": sanitizers
+                    }
+                #TODO
+                print([dicti])
+
+def process_func(instruction):
+    f_name = processing(instruction['func'], False)
     
-def process_func(instruction, processed):
-    f_name = processing(instruction['func'], processed, False)
-    
-    vuln_sources = detect(f_name, vulns, "sources")
+    vuln_sources = detect(f_name, "sources")
     if vuln_sources != []:
         return Taintdness(True, vulns = vuln_sources, sources = [f_name])
     
-    process_calls(instruction, f_name, processed)
+    process_calls(instruction, f_name)
     
-    vuln_sanitizers = detect(f_name, vulns, "sanitizers")
+    vuln_sanitizers = detect(f_name, "sanitizers")
     if vuln_sanitizers != []:
         for arg in instruction['args']:
-            taint = processing(arg, processed)
+            taint = processing(arg)
             aux = [x for x in vuln_sanitizers if x in taint.get_vulns()]
             if aux != []:
-               taint.add_sanitizer(f_name)
+               taint.add_sanitizers([f_name])
                return taint
             
     
     return Taintdness()
 
-def process_attribute(instruction, processed):
-    return processing(instruction['value'], processed, False) + "." + instruction['attr']
 
-def process_binaryOp(instruction, processed):
+
+def process_attribute(instruction):
+    k = instruction['value']['id'] + '.' + instruction['attr']
+    if k in cfg.processed.keys():
+        return cfg.processed[k]
+    else:
+        return Taintdness(True, sources=[instruction['value']['id']])
+    
+
+def process_binaryOp(instruction):
     taint = Taintdness(True)
-    left = processing(instruction['left'], processed)
-    right = processing(instruction['right'], processed)
+    left = processing(instruction['left'])
+    right = processing(instruction['right'])
     if left.get_taint():
         taint.add_vulns(left.get_vulns())
         taint.add_sources(left.get_sources())
@@ -168,11 +203,12 @@ def process_binaryOp(instruction, processed):
         taint.add_sanitizers(right.get_sanitizers())
         taint.add_sinks(right.get_sinks())
     
+    if not left.get_taint() and not right.get_taint():
+        taint = Taintdness(False)
+    
     return taint
 
-def process_assign(instruction, vulnerabilities, processed):
-    global vulns
-    vulns = vulnerabilities
+def process_assign(instruction):
     var = []
     for target in instruction['targets']:
         '''Name, tuple, Subscript (Que tenha descoberto)'''
@@ -181,14 +217,14 @@ def process_assign(instruction, vulnerabilities, processed):
             var.append([process_name_left(target)])
             
         elif target['ast_type'] == 'Tuple':
-            var.append([process_tuple(target, processed, False)])
+            var.append([process_tuple(target, False)])
             
         elif target['ast_type'] == 'Subscript':
             var.append([process_subscript(target)])
                 
     value = instruction['value']
     #type bytes
-    vals = [[processing(value, processed)]]
+    vals = [[processing(value)]]
     
     dicti = {}
     
@@ -202,18 +238,18 @@ def process_assign(instruction, vulnerabilities, processed):
     #print(dicti) 
     return dicti
 
-def processing(instruction, processed, isRight = True):
+def processing(instruction, isRight = True):
     #type bytes
     if(isinstance(instruction, str)):
         return Taintdness(False, [], [], [], [])
     elif(instruction['ast_type'] == 'Name'):
-        return process_name_right(instruction, processed) if isRight else process_name_left(instruction)
+        return process_name_right(instruction) if isRight else process_name_left(instruction)
     
     elif(instruction['ast_type'] == 'Tuple'):
-        return process_tuple(instruction, processed, True)
+        return process_tuple(instruction, True)
     
     elif(instruction['ast_type'] == 'Subscript'):
-        return process_subscript(instruction, processed)
+        return process_subscript(instruction)
     
     elif(instruction['ast_type'] == 'Num'):
         return process_num(instruction)
@@ -225,20 +261,20 @@ def processing(instruction, processed, isRight = True):
         return process_boolean(instruction)
     
     elif(instruction['ast_type'] == 'List'):
-        return process_list(instruction, processed)
+        return process_list(instruction)
     
     elif(instruction['ast_type'] == 'Dict'):
-        return process_dicti(instruction, processed)
+        return process_dicti(instruction)
     
     elif(instruction['ast_type'] == 'Set'):
-        return process_set(instruction, processed)
+        return process_set(instruction)
     
     elif(instruction['ast_type'] == 'Call'):
-        return process_func(instruction, processed)
+        return process_func(instruction)
         
     elif(instruction['ast_type'] == 'Attribute'):
-        return process_attribute(instruction, processed)
+        return process_attribute(instruction)
 
-    #elif(instruction['ast_type'] == 'BinOp'):
-     #   return process_binaryOp(instruction, processed)
+    elif(instruction['ast_type'] == 'BinOp'):
+        return process_binaryOp(instruction)
     #process function, binary_ops

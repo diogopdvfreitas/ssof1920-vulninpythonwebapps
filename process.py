@@ -202,10 +202,12 @@ def process_binaryOp(instruction):
     taint = Taintdness(True)
     left = processing(instruction['left'])
     right = processing(instruction['right'])
-    if(isinstance(left, tuple) or isinstance(right, tuple)):
-        if isinstance(left, tuple) and isinstance(right, tuple):
+    if(isinstance(left, tuple) or isinstance(right, tuple)
+        or isinstance(left, list) or isinstance(right, list)):
+        if (isinstance(left, tuple) and isinstance(right, tuple)) or \ 
+            (isinstance(left, list) and isinstance(right, list)):
             return left + right
-        elif isinstance(left, tuple):
+        elif isinstance(left, tuple) or isinstance(left, list):
             return left
         else:
             return right

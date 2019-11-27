@@ -51,22 +51,30 @@ def process_index(instruction):
     elif(instruction['ast_type'] == 'Str'):
         return "\"" + instruction['s'] + "\""
     else:
-        #Se for var ou função, o que fazemos???? Taint a tudo because we have no clue ou solução mais avançada
+        #Se for var ou função, o que fazemos???? Taint a tudo because we have no clue ou solução mais avançada propagar???
+        #TODO IF PROPAGAR
         return -1
 
 def process_value(instruction):
     if(instruction['ast_type'] == 'Name'):
         return process_name_left(instruction)
     elif(instruction['ast_type'] == 'Subscript'):
-        return process_subscript(instruction)
+        return process_subscript_left(instruction)
 
-def process_subscript(instruction):
+def process_subscript_left(instruction):
     index = process_index(instruction['slice']['value'])
     value = process_value(instruction['value'])
-    #create object???  use isinstance in main??? (necessary to correct in order to access collections in the dictionary var)
-    #TODO
     var = value + '[' + str(index) + ']'
     return var
+
+def process_subscript_right(instruction):
+    index = process_index(instruction['slice']['value'])
+    value = process_value(instruction['value'])
+    var = value + '[' + str(index) + ']'
+    if var in cfg.processed.keys():
+        return cfg.processed[var]
+    else:
+        return Taintdness(True, sources=[var])
 
 def process_tuple(instruction, isRight):
     var = []
@@ -210,10 +218,45 @@ def process_binaryOp(instruction):
     
     return taint
 
+def check_if_collection(val):
+    if(isinstance(val, list) or isinstance(val, tuple) or isinstance(val, dict) or isinstance(val, set)):
+        return True
+    else:
+        return False
+
+def p_aux_collections(key, vals):
+    dictic = {}
+    if(isinstance(vals, list) or isinstance(vals, tuple)):
+        for i in range(0,len(vals)):
+            k = key + '[' + str(i) + ']'
+            if check_if_collection(vals[i]):
+                aux = p_aux_collections(k, vals[i])
+                dictic = { **dictic, **aux}
+            else:
+                dictic[k] = vals[i]
+    elif(isinstance(vals , set)):
+        for i in range(0, len(vals)):
+            el = vals.pop()
+            k = key + '[' + str(i) + ']'
+            if check_if_collection(el):
+                aux = p_aux_collections(el, k)
+                dictic = { **dictic, **aux}
+            else:
+                dictic[k] = el
+    elif(isinstance(vals, dict)):
+        for k in vals:
+            ky = key + '[\"' + k + '\"]'
+            if check_if_collection(vals[k]):
+                aux = p_aux_collections(ky, vals[k])
+                dictic = { **dictic, **aux}
+            else:
+                dictic[ky] = vals[k]
+    return dictic
+
+
 def process_assign(instruction):
     var = []
     for target in instruction['targets']:
-        '''Name, tuple, Subscript (Que tenha descoberto)'''
         #Examplos para dictionary, tuples, etc
         if target['ast_type'] == 'Name':
             var.append([process_name_left(target)])
@@ -222,8 +265,8 @@ def process_assign(instruction):
             var.append([process_tuple(target, False)])
             
         elif target['ast_type'] == 'Subscript':
-            var.append([process_subscript(target)])
-                
+           var.append([process_subscript_left(target)])
+
     value = instruction['value']
     #type bytes
     vals = [[processing(value)]]
@@ -234,9 +277,17 @@ def process_assign(instruction):
        for j in range(len(var[i])):
            if isinstance(var[i][j], tuple):
                for k in range(len(var[i][j])):
-                   dicti[var[i][j][k]] = vals[i][j][k]
+                    if check_if_collection(vals[i][j][k]):
+                        aux = p_aux_collections(var[i][j][k], vals[i][j][k])
+                        dicti = {**dicti, **aux}
+                    else:
+                        dicti[var[i][j][k]] = vals[i][j][k]
            else:
-               dicti[var[i][j]] = vals[i][j]
+                if check_if_collection(vals[i][j]):
+                    aux = p_aux_collections(var[i][j], vals[i][j])
+                    dicti = {**dicti, **aux}
+                else:
+                    dicti[var[i][j]] = vals[i][j]
     #print(dicti) 
     return dicti
 
@@ -251,7 +302,7 @@ def processing(instruction, isRight = True):
         return process_tuple(instruction, True)
     
     elif(instruction['ast_type'] == 'Subscript'):
-        return process_subscript(instruction)
+        return process_subscript_right(instruction)
     
     elif(instruction['ast_type'] == 'Num'):
         return process_num(instruction)

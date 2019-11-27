@@ -2,12 +2,12 @@
     {
       "vulnerability": "SQL injection",
       "sources": [
-        "a", "b", "c", "d"
+        "a", "b", "c", "d", "get"
       ],
       "sanitizers": ["t"],
       "sinks": [
         "z",
-        "s", "y", "w", "x"
+        "s", "y", "w", "x", "execute"
       ]
     }
   ]

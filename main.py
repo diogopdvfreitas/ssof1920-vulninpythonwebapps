@@ -84,13 +84,16 @@ def p_code(program):
             cfg.processed = {**cfg.processed, **dicti}
         elif instruction['ast_type'] == 'Expr': #para por exemplo se chama apenas uma funcao com um argumento, que nao tem retorno---exemplo: clean(a)
             process_calls(instruction, processing(instruction['value']))
-                    
+
         elif instruction['ast_type'] == 'FunctionDef': #quando se define o corpo duma funçao
             p_code(instruction['body'])
         
         elif instruction['ast_type'] == 'While' or instruction['ast_type'] == 'For':
-            dictif =  p_code(instruction['body'])
-            cfg.processed = {**cfg.processed, **dictif}
+            for i in range(10):
+                dictif =  p_code(instruction['body'])
+                #differs if runned twice???
+                dictif =  p_code(instruction['body'])
+                cfg.processed = {**cfg.processed, **dictif}
         elif instruction['ast_type'] == 'If':
             dictif1 =  p_code(instruction['body'])
             cfg.processed = {**cfg.processed, **dictif1}
